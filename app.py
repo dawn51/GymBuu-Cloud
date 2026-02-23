@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 
 # 🔑 GÜVENLİK: Kendi şifreni buraya yaz kanka
-ADMIN_PASSWORD = "safak_gym_123"
+ADMIN_PASSWORD = "safakbabapro2004"
 
 # 🗄️ Veritabanı Ayarları (Supabase Pooler için uyumlu)
 db_url = os.environ.get('DATABASE_URL')
@@ -111,3 +111,4 @@ def delete_item(type, id):
 
 if __name__ == "__main__":
     app.run()
+
