@@ -1,100 +1,66 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymBuu Admin</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        button { background: #28a745; color: white; border: none; cursor: pointer; }
-        .btn-delete { background: #dc3545; width: auto; padding: 5px 10px; }
-        .note-btn { background: #007bff; }
-    </style>
-</head>
-<body>
-    <h1>🏋️ GymBuu</h1>
+// ANTRENMAN EKLEME
+async function addEntry() {
+    const password = prompt("Antrenman girmek için admin şifresi:");
+    if (!password) return;
 
-    <div class="card">
-        <h3>Antrenman Ekle (Admin)</h3>
-        <input type="date" id="date">
-        <input type="text" id="exercise" placeholder="Egzersiz">
-        <input type="number" id="sets" placeholder="Set">
-        <input type="number" id="reps" placeholder="Tekrar">
-        <input type="number" id="weight" placeholder="Kilo (kg)">
-        <button onclick="addEntry()">Kaydet</button>
-    </div>
+    const data = {
+        // Buradaki ID'leri kendi eski formundaki input ID'leri ile aynı yap
+        date: document.getElementById('date').value,
+        exercise: document.getElementById('exercise').value,
+        sets: document.getElementById('sets').value,
+        reps: document.getElementById('reps').value,
+        weight: document.getElementById('weight').value
+    };
 
-    <div class="card">
-        <h3>Not Bırak (Herkese Açık)</h3>
-        <input type="text" id="noteContent" placeholder="Mesajın...">
-        <button class="note-btn" onclick="addNote()">Not Ekle</button>
-    </div>
+    const res = await fetch('/api/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': password },
+        body: JSON.stringify(data)
+    });
+    if (res.status === 403) alert("Şifre Yanlış!");
+    else location.reload();
+}
 
-    <div id="entriesList"></div>
-    <hr>
-    <div id="notesList"></div>
+// KİLO EKLEME (Senin Teman İçin)
+async function addWeight() {
+    const password = prompt("Kilo girmek için admin şifresi:");
+    if (!password) return;
 
-    <script>
-        async function loadData() {
-            // Antrenmanları Yükle
-            const eRes = await fetch('/api/entries');
-            const entries = await eRes.json();
-            document.getElementById('entriesList').innerHTML = '<h3>Antrenman Günlüğü</h3>' + 
-                entries.map(e => `<div class="card">${e.date} - ${e.exercise} (${e.sets}x${e.reps}) - ${e.weight}kg 
-                <button class="btn-delete" onclick="deleteData('entry', ${e.id})">Sil</button></div>`).join('');
+    const data = {
+        date: document.getElementById('weightDate').value,
+        kg: document.getElementById('weightKg').value
+    };
 
-            // Notları Yükle
-            const nRes = await fetch('/api/notes');
-            const notes = await nRes.json();
-            document.getElementById('notesList').innerHTML = '<h3>Ziyaretçi Notları</h3>' + 
-                notes.map(n => `<div class="card"><b>${n.date}:</b> ${n.content} 
-                <button class="btn-delete" onclick="deleteData('note', ${n.id})">Sil</button></div>`).join('');
-        }
+    const res = await fetch('/api/weights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': password },
+        body: JSON.stringify(data)
+    });
+    if (res.status === 403) alert("Şifre Yanlış!");
+    else location.reload();
+}
 
-        async function addEntry() {
-            const password = prompt("Admin şifresini gir kanka:");
-            if (!password) return;
-            const data = {
-                date: document.getElementById('date').value,
-                exercise: document.getElementById('exercise').value,
-                sets: document.getElementById('sets').value,
-                reps: document.getElementById('reps').value,
-                weight: document.getElementById('weight').value
-            };
-            const res = await fetch('/api/entries', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': password },
-                body: JSON.stringify(data)
-            });
-            if (res.status === 403) alert("Hatalı Şifre!");
-            else location.reload();
-        }
+// NOT EKLEME (Şifresiz, Ziyaretçiler İçin)
+async function addNote() {
+    const content = document.getElementById('noteContent').value;
+    const date = new Date().toISOString().split('T')[0];
+    await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, content })
+    });
+    location.reload();
+}
 
-        async function addNote() {
-            const content = document.getElementById('noteContent').value;
-            const date = new Date().toISOString().split('T')[0];
-            await fetch('/api/notes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date, content })
-            });
-            location.reload();
-        }
+// ORTAK SİLME FONKSİYONU (Antrenman, Kilo, Not için)
+async function deleteData(type, id) {
+    const password = prompt("Silmek için admin şifresi:");
+    if (!password) return;
 
-        async function deleteData(type, id) {
-            const password = prompt("Silmek için admin şifresi:");
-            if (!password) return;
-            const res = await fetch(`/api/delete/${type}/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': password }
-            });
-            if (res.status === 403) alert("Yetkin yok baboli!");
-            else location.reload();
-        }
-
-        loadData();
-    </script>
-</body>
-</html>
+    const res = await fetch(`/api/delete/${type}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': password }
+    });
+    if (res.status === 403) alert("Yetkin yok kanka!");
+    else location.reload();
+}
